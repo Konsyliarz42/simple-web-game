@@ -5,3 +5,5 @@
 
 *cache*
 *copy*
+
+migrations/*.sql

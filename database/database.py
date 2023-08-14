@@ -31,24 +31,30 @@ class Database:
         self.cursor = self.connection.cursor()
 
     def close(self) -> None:
-        self.cursor.close()
-        self.cursor = None
+        if self.cursor is not None:
+            self.cursor.close()
+            self.cursor = None
 
-        self.connection.close()
-        self.connection = None
+        if self.connection is not None:
+            self.connection.close()
+            self.connection = None
 
     def execute(self, sql: str) -> Optional[list[tuple[Any, ...]]]:
         if not self.connection or not self.cursor:
-            raise psycopg2.DatabaseError(
-                "You need to start connection before executing SQL script"
-            )
+            raise psycopg2.DatabaseError("You need to start connection before executing SQL script")
 
+        print(sql)
         self.cursor.execute(sql)
-
+        
         if "SELECT" in sql.upper():
             return self.cursor.fetchall()
-        
+
+        return None
+
     def commit(self) -> None:
+        if not self.connection or not self.cursor:
+            raise psycopg2.DatabaseError("You need to start connection before start committing changes")
+
         self.connection.commit()
 
     def single_execute(self, sql: str) -> Optional[list[tuple[Any, ...]]]:
