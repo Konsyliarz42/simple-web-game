@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:15.4
+    ports:
+      - 5432:5432
+    env_file:
+      - .env
+
+  pgweb:
+    image: sosedoff/pgweb:0.14.1
+    restart: always
+    ports:
+      - 8081:8081
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - PGWEB_DATABASE_URL=postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@db:$POSTGRES_PORT/$POSTGRES_DATABASE?sslmode=disable
