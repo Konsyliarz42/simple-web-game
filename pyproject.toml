@@ -7,17 +7,22 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-flask-restful = "^0.3.10"
-pydantic = { extras = ["dotenv"], version = "^2.1.1" }
+flask-restful = "0.3.10"
+pydantic = "2.1.1"
+psycopg2-binary = "2.9.7"
+pydantic-settings = "2.0.3"
 
 [tool.poetry.group.dev.dependencies]
-taskipy = "^1.12.0"
-black = "^23.7.0"
-flake8 = "^6.1.0"
-mypy = "^1.5.0"
-isort = "^5.12.0"
-coverage = "^7.3.0"
-pytest = "^7.4.0"
+taskipy = "1.12.0"
+black = "23.7.0"
+flake8 = "6.1.0"
+mypy = "1.5.0"
+isort = "5.12.0"
+coverage = "7.3.0"
+pytest = "7.4.0"
+types-psycopg2 = "2.9.21.11"
+docker = "6.1.3"
+ruff = "0.0.284"
 
 [tool.taskipy.settings]
 use_vars = true
@@ -29,9 +34,21 @@ additional_directories = "database"
 
 [tool.taskipy.tasks]
 formatting = "task formatting_isort && task formatting_black"
-formatting_black = "black {root_directory} {additional_directories} {tests_directory}"
 formatting_isort = "isort {root_directory} {additional_directories} {tests_directory}"
-lint = "task lint_mypy && task lint_flake8"
-lint_flake8 = "flake8 {root_directory} {additional_directories} && echo All is ok!"
+formatting_black = "black {root_directory} {additional_directories} {tests_directory}"
+formatting_black_check = "task formatting_black --check"
+lint = "task lint_mypy && task lint_flake8 && task lint_ruff"
 lint_mypy = "mypy {root_directory} {additional_directories}"
-test = "coverage run -m pytest"
+lint_flake8 = "flake8 {root_directory} {additional_directories} {tests_directory} && echo flake8: All is ok!"
+lint_ruff = "ruff check {root_directory} {additional_directories} {tests_directory} && echo ruff: All is ok!"
+test = "coverage run -m pytest -v"
+test_report = "coverage report --skip-empty --show-missing --fail-under=80"
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 127
+
+[tool.ruff]
+line-length = 128
