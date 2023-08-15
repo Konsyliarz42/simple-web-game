@@ -2,7 +2,7 @@ name: "Python linters"
 
 on:
   workflow_run:
-    workflows: [Formatting]
+    workflows: ["Formatting"]
     types: [completed]
 
 jobs:
@@ -16,6 +16,9 @@ jobs:
       - name: Install additional mypy types
         run: mypy --install-types
 
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Run mypy
         run: task lint_mypy
 
@@ -26,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: pip install taskipy==1.12.0 flake8==6.1.0
 
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Run flake8
         run: task lint_flake8
 
@@ -35,6 +41,9 @@ jobs:
     steps:
       - name: Install dependencies
         run: pip install taskipy==1.12.0 ruff==0.0.284
+
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Run ruff
         run: task lint_ruff
