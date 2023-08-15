@@ -1,9 +1,6 @@
-.env
 .venv
 .vscode
 .coverage
 
 *cache*
 *copy*
-
-migrations/*.sql
