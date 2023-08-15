@@ -21,7 +21,7 @@ jobs:
         run: pip install poetry && poetry install
 
       - name: Run tests
-        run: task test
+        run: poetry run task test
 
       - name: Coverage report
-        run: task test_report
+        run: poetry run task test_report
