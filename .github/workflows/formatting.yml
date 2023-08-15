@@ -12,8 +12,6 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          sparse-checkout: .
 
       - name: x
         run: ls -al && pip list
