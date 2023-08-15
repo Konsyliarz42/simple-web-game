@@ -6,7 +6,7 @@ authors = ["Tomasz Kordiak <dotomika@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.11"
+python = "^3.11"
 flask-restful = "0.3.10"
 pydantic = "2.1.1"
 psycopg2-binary = "2.9.7"
