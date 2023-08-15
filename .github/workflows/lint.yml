@@ -1,6 +1,7 @@
 name: Python linters
 
 on:
+  push:
   workflow_run:
     workflows: [Formatting]
     types:
