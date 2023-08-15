@@ -2,17 +2,24 @@ services:
   db:
     image: postgres:15.4
     ports:
-      - 5432:5432
+      - $POSTGRES_PORT:5432
     env_file:
       - .env
+    environment:
+      - POSTGRES_DB=$POSTGRES_DATABASE
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 2
 
   pgweb:
     image: sosedoff/pgweb:0.14.1
-    restart: on-failure
     ports:
       - 8081:8081
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
       - .env
     environment:
