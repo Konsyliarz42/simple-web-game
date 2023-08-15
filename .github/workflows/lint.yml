@@ -1,11 +1,10 @@
 name: Python linters
 
 on:
-  push:
   workflow_run:
     workflows: [Formatting]
-    types:
-      - completed
+    types: [completed]
+    branches: ["**"]
 
 jobs:
   mypy:
