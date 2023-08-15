@@ -1,6 +1,7 @@
-name: "Formatting"
+name: Formatting
 
-on: push
+on: 
+  push:
 
 jobs:
   black:

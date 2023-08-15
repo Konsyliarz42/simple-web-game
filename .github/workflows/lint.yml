@@ -1,9 +1,10 @@
-name: "Python linters"
+name: Python linters
 
 on:
   workflow_run:
-    workflows: ["Formatting"]
-    types: [completed]
+    workflows: [Formatting]
+    types:
+      - completed
 
 jobs:
   mypy:
