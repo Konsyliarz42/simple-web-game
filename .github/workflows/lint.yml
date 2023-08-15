@@ -1,0 +1,40 @@
+name: "Python linters"
+
+on:
+  workflow_run:
+    workflows: [Formatting]
+    types: [completed]
+
+jobs:
+  mypy:
+    name: mypy (1.5.0)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: pip install taskipy==1.12.0 mypy==1.5.0
+
+      - name: Install additional mypy types
+        run: mypy --install-types
+
+      - name: Run mypy
+        run: task lint_mypy
+
+  flake8:
+    name: flake8 (6.1.0)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: pip install taskipy==1.12.0 flake8==6.1.0
+
+      - name: Run flake8
+        run: task lint_flake8
+
+  ruff:
+    name: ruff (0.0.284)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: pip install taskipy==1.12.0 ruff==0.0.284
+
+      - name: Run ruff
+        run: task lint_ruff
