@@ -15,7 +15,14 @@ from .utils import get_initial_migration, get_migration_by_id
 
 
 class Migrator:
-    def __init__(self, database: Database, migrations_directory: str | Path) -> None:
+    def __init__(
+        self,
+        database: Database,
+        migrations_directory: str | Path = "migrations",
+    ) -> None:
+        """
+        Simple migration management.
+        """
         self.db = database
         self.directory = Path(migrations_directory)
 
@@ -33,21 +40,30 @@ class Migrator:
             initial_migration.path.write_text(f"{up_sql}\n\n{MIGRATION_SEPARATOR}\n\n{down_sql}\n")
 
     def _insert_migration(self, migration: Migration) -> None:
+        """
+        Add row to the migration table.
+        """
         sql = "INSERT INTO {table_name}\nVALUES ({migration_id}, '{migration_name}');".format(
             table_name=MIGRATION_TABLE,
             migration_id=migration.id,
             migration_name=migration.name,
         )
-        self.db.single_execute(sql)
+        self.db.execute(sql)
 
     def _delete_migration(self, migration: Migration) -> None:
+        """
+        Remove row from the migration table.
+        """
         sql = "DELETE from {table_name}\nWHERE id={migration_id};".format(
             table_name=MIGRATION_TABLE,
             migration_id=migration.id,
         )
-        self.db.single_execute(sql)
+        self.db.execute(sql)
 
     def get_applied_migrations(self) -> tuple[Migration, ...]:
+        """
+        Get all applied migrations.
+        """
         sql = "SELECT id, name FROM {table_name}".format(table_name=MIGRATION_TABLE)
         result = self.db.single_execute(sql)
         migrations = []
@@ -60,6 +76,9 @@ class Migrator:
         return tuple(migrations)
 
     def get_all_migrations(self) -> tuple[Migration, ...]:
+        """
+        Get all local migrations.
+        """
         migration_files = self.directory.glob("*.sql")
         migrations = []
 
@@ -70,6 +89,9 @@ class Migrator:
         return tuple(migrations)
 
     def create_migration(self, migration_name: str) -> Migration:
+        """
+        Create a new migration from the template.
+        """
         if not re.match(re.compile(ALPHANUMERIC_PATTERN), migration_name):
             raise ValueError("Name of migration must be alphanumeric")
 
@@ -89,11 +111,27 @@ class Migrator:
         return Migration(migration_id, migration_name, migration_file)
 
     def run_migration(self, migration_id: int) -> None:
+        """
+        Apply migration and set migration as applied.
+        """
         migrations = self.get_all_migrations()
         migration = get_migration_by_id(migrations, migration_id)
+
+        self.db.connect()
+        self.db.execute(migration.up_sql)
         self._insert_migration(migration)
+        self.db.commit()
+        self.db.close()
 
     def revert_migration(self, migration_id: int) -> None:
+        """
+        Revert migration changes and set migration as unapplied.
+        """
         migrations = self.get_applied_migrations()
         migration = get_migration_by_id(migrations, migration_id)
+
+        self.db.connect()
+        self.db.execute(migration.down_sql)
         self._delete_migration(migration)
+        self.db.commit()
+        self.db.close()
