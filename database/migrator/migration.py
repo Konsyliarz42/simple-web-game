@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from .constants import MIGRATION_SEPARATOR
+from .constants import MIGRATION_SEPARATOR, MIGRATION_ZFILL
 from .exceptions import MigrationError
 
 
@@ -10,6 +10,10 @@ class Migration:
     id: int
     name: str
     path: Path
+
+    @property
+    def _id_str(self) -> str:
+        return str(self.id).zfill(MIGRATION_ZFILL)
 
     @property
     def up_sql(self) -> str:

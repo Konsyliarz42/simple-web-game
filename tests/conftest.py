@@ -1,15 +1,17 @@
-from pathlib import Path
 from time import sleep
 
 import docker
 import pytest
 from docker.models.containers import Container
+from pytest_factoryboy import register
 
-from database import Database, Migration, Migrator
-from database.migrator import constants as migration_constants
+from database import Database
+from database.migrator import Migrator
+from factories import MigrationFactory
 
 from . import Constants
-from .database import SqlScripts
+
+register(MigrationFactory)
 
 
 @pytest.fixture
@@ -54,31 +56,7 @@ def db(postgres: Container) -> Database:
 def migrator(db: Database) -> Migrator:
     migrator = Migrator(db, Constants.MIGRATIONS_DIRECTORY)
 
-    return migrator
+    yield migrator
 
-
-@pytest.fixture(autouse=True)
-def remove_migration_files() -> None:
-    yield None
-
-    migrations = Constants.MIGRATIONS_DIRECTORY.glob("*.sql")
-
-    for migration in migrations:
+    for migration in Constants.MIGRATIONS_DIRECTORY.glob("*.sql"):
         migration.unlink()
-
-
-@pytest.fixture
-def migration() -> Migration:
-    migration_id = 1
-    migration_id_str = str(migration_id).zfill(migration_constants.MIGRATION_ZFILL)
-    migration_name = "fake_migration_0"
-    migration_path = Path(f"{Constants.MIGRATIONS_DIRECTORY}/{migration_id_str}-{migration_name}.sql")
-
-    migration_content = (
-        f"{SqlScripts.CREATE_TEST_TABLE}\n"
-        f"\n{migration_constants.MIGRATION_SEPARATOR}\n"
-        f"\n{SqlScripts.DROP_TEST_TABLE}\n"
-    )
-    migration_path.write_text(migration_content, "utf-8")
-
-    return Migration(migration_id, migration_name, migration_path)

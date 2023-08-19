@@ -3,8 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from database import Database, Migration, Migrator
+from database import Database
+from database.migrator import Migration, Migrator
 from database.migrator import constants as migration_constants
+from factories import MigrationFactory
 from tests import Constants
 
 from . import SqlScripts
@@ -74,16 +76,17 @@ def test_migrator_create_migration_with_not_unique_name(migrator: Migrator) -> N
 def test_migrator_run_migration(
     db: Database,
     migrator: Migrator,
-    migration: Migration,
+    migration_factory: MigrationFactory,
 ) -> None:
     current_utc_time = datetime.utcnow()
+    migration: Migration = migration_factory.create()
 
     migrator.run_migration(migration.id)
 
     result = db.single_execute(SqlScripts.GET_ALL_TABLES)
     assert result == [
         (migration_constants.MIGRATION_TABLE, Constants.POSTGRES_USER),
-        (Constants.TEST_TABLE_NAME, Constants.POSTGRES_USER),
+        (f"table{migration.id}", Constants.POSTGRES_USER),
     ]
 
     result = db.single_execute(SqlScripts.GET_ALL_MIGRATION_ROWS)
@@ -103,8 +106,9 @@ def test_migrator_run_migration_with_wrong_id(migrator: Migrator) -> None:
 def test_migrator_revert_migration(
     db: Database,
     migrator: Migrator,
-    migration: Migration,
+    migration_factory: MigrationFactory,
 ) -> None:
+    migration: Migration = migration_factory.create()
     migrator.run_migration(migration.id)
 
     migrator.revert_migration(migration.id)
@@ -123,8 +127,9 @@ def test_migrator_revert_migration_with_wrong_id(migrator: Migrator) -> None:
 
 def test_migrator_get_all_migrations(
     migrator: Migrator,
-    migration: Migration,
+    migration_factory: MigrationFactory,
 ) -> None:
+    migration_factory.create_batch(4)
     migration_files = Path(Constants.MIGRATIONS_DIRECTORY).glob("*.sql")
 
     all_migrations = migrator.get_all_migrations()
@@ -135,8 +140,9 @@ def test_migrator_get_all_migrations(
 
 def test_migrator_get_all_applied_migrations(
     migrator: Migrator,
-    migration: Migration,
+    migration_factory: MigrationFactory,
 ) -> None:
+    migration_factory.create_batch(4)
     migration_files = Path(Constants.MIGRATIONS_DIRECTORY).glob("*.sql")
 
     applied_migrations = migrator.get_applied_migrations()

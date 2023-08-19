@@ -9,6 +9,7 @@ from .constants import (
     MIGRATION_TABLE,
     MIGRATION_TEMPLATE_PATH,
     MIGRATION_ZFILL,
+    MIGRATIONS_DIRECTORY,
 )
 from .migration import Migration
 from .utils import get_initial_migration, get_migration_by_id
@@ -18,7 +19,7 @@ class Migrator:
     def __init__(
         self,
         database: Database,
-        migrations_directory: str | Path = "migrations",
+        migrations_directory: str | Path = MIGRATIONS_DIRECTORY,
     ) -> None:
         """
         Simple migration management.
@@ -54,6 +55,9 @@ class Migrator:
         """
         Remove row from the migration table.
         """
+        if migration.id == 0:
+            return
+
         sql = "DELETE from {table_name}\nWHERE id={migration_id};".format(
             table_name=MIGRATION_TABLE,
             migration_id=migration.id,

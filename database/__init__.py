@@ -1,6 +1,8 @@
-from .database import Database
-from .migrator.exceptions import MigrationError
-from .migrator.migration import Migration
-from .migrator.migrator import Migrator
+from os import environ
 
-__all__ = ["Database", "Migration", "MigrationError", "Migrator"]
+from .database import Database
+
+# db = Database(environ["POSTGRES_PASSWORD"])
+db = Database("postgres")
+
+__all__ = ["Database", "db"]

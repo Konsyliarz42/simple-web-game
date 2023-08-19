@@ -23,6 +23,7 @@ pytest = "7.4.0"
 types-psycopg2 = "2.9.21.11"
 docker = "6.1.3"
 ruff = "0.0.284"
+pytest-factoryboy = "^2.5.1"
 
 [tool.taskipy.settings]
 use_vars = true
@@ -30,7 +31,7 @@ use_vars = true
 [tool.taskipy.variables]
 root_directory = "app"
 tests_directory = "tests"
-additional_directories = "database"
+additional_directories = "database factories"
 
 [tool.taskipy.tasks]
 formatting = "task formatting_isort && task formatting_black"
