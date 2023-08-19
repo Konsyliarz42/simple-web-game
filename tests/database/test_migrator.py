@@ -5,10 +5,10 @@ import pytest
 
 from database import Database
 from database.migrator import Migration, Migrator
-from database.migrator import constants as migration_constants
+from database.migrator.constants import Constants as MigratorConstants
 from factories import MigrationFactory
-from tests import Constants
 
+from .. import Constants as PytestConstants
 from . import SqlScripts
 
 
@@ -16,16 +16,20 @@ def _round_datetime(dt: datetime) -> datetime:
     return dt.replace(microsecond=0)
 
 
+def _migration_id_zfill(migration_id: int) -> str:
+    return str(migration_id).zfill(MigratorConstants.MIGRATION_ZFILL)
+
+
 def test_migrator_init(db: Database) -> None:
-    migration_id = str(0).zfill(migration_constants.MIGRATION_ZFILL)
-    migration_file = f"{migration_id}-{migration_constants.INITIAL_MIGRATION_NAME}.sql"
+    migration_id = _migration_id_zfill(0)
+    migration_file = f"{migration_id}-{MigratorConstants.INITIAL_MIGRATION_NAME}.sql"
 
-    Migrator(db, Constants.MIGRATIONS_DIRECTORY)
+    Migrator(db, PytestConstants.MIGRATIONS_DIRECTORY)
 
-    assert Path(f"{Constants.MIGRATIONS_DIRECTORY}/{migration_file}").exists()
+    assert Path(f"{PytestConstants.MIGRATIONS_DIRECTORY}/{migration_file}").exists()
 
     result = db.single_execute(SqlScripts.GET_ALL_TABLES)
-    assert result == [(migration_constants.MIGRATION_TABLE, Constants.POSTGRES_USER)]
+    assert result == [(MigratorConstants.MIGRATION_TABLE, PytestConstants.POSTGRES_USER)]
 
 
 def test_migrator_create_migration(migrator: Migrator) -> None:
@@ -35,7 +39,7 @@ def test_migrator_create_migration(migrator: Migrator) -> None:
 
     assert migration.id == 1
     assert migration.name == migration_name
-    assert migration.path.exists()
+    assert migration.file_path.exists()
 
 
 def test_migrator_create_migration_indexes(migrator: Migrator) -> None:
@@ -45,7 +49,7 @@ def test_migrator_create_migration_indexes(migrator: Migrator) -> None:
         migration = migrator.create_migration(f"{base_migration_name}_{index}")
 
         assert migration.id == index
-        assert str(index).zfill(migration_constants.MIGRATION_ZFILL) in migration.path.name
+        assert _migration_id_zfill(index) in migration.file_path.name
 
 
 @pytest.mark.parametrize(
@@ -68,7 +72,7 @@ def test_migrator_create_migration_with_not_alphanumeric_name(
 
 def test_migrator_create_migration_with_not_unique_name(migrator: Migrator) -> None:
     with pytest.raises(ValueError) as error:
-        migrator.create_migration(migration_constants.INITIAL_MIGRATION_NAME)
+        migrator.create_migration(MigratorConstants.INITIAL_MIGRATION_NAME)
 
     assert str(error.value) == "Migration name must be unique"
 
@@ -85,8 +89,8 @@ def test_migrator_run_migration(
 
     result = db.single_execute(SqlScripts.GET_ALL_TABLES)
     assert result == [
-        (migration_constants.MIGRATION_TABLE, Constants.POSTGRES_USER),
-        (f"table{migration.id}", Constants.POSTGRES_USER),
+        (MigratorConstants.MIGRATION_TABLE, PytestConstants.POSTGRES_USER),
+        (f"table{migration.id}", PytestConstants.POSTGRES_USER),
     ]
 
     result = db.single_execute(SqlScripts.GET_ALL_MIGRATION_ROWS)
@@ -114,7 +118,7 @@ def test_migrator_revert_migration(
     migrator.revert_migration(migration.id)
 
     result = db.single_execute(SqlScripts.GET_ALL_TABLES)
-    assert result == [(migration_constants.MIGRATION_TABLE, Constants.POSTGRES_USER)]
+    assert result == [(MigratorConstants.MIGRATION_TABLE, PytestConstants.POSTGRES_USER)]
 
     result = db.single_execute(SqlScripts.GET_ALL_MIGRATION_ROWS)
     assert len(result) == 0
@@ -130,12 +134,12 @@ def test_migrator_get_all_migrations(
     migration_factory: MigrationFactory,
 ) -> None:
     migration_factory.create_batch(4)
-    migration_files = Path(Constants.MIGRATIONS_DIRECTORY).glob("*.sql")
+    migration_files = Path(PytestConstants.MIGRATIONS_DIRECTORY).glob("*.sql")
 
     all_migrations = migrator.get_all_migrations()
 
     for _migration, file in zip(all_migrations, migration_files):
-        assert _migration.path == file.absolute()
+        assert _migration.file_path == file.absolute()
 
 
 def test_migrator_get_all_applied_migrations(
@@ -143,7 +147,7 @@ def test_migrator_get_all_applied_migrations(
     migration_factory: MigrationFactory,
 ) -> None:
     migration_factory.create_batch(4)
-    migration_files = Path(Constants.MIGRATIONS_DIRECTORY).glob("*.sql")
+    migration_files = Path(PytestConstants.MIGRATIONS_DIRECTORY).glob("*.sql")
 
     applied_migrations = migrator.get_applied_migrations()
 

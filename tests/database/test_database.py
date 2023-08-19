@@ -3,8 +3,8 @@ import pytest
 from docker.models.containers import Container
 
 from database import Database
-from tests import Constants
 
+from ..constants import Constants
 from . import SqlScripts
 
 

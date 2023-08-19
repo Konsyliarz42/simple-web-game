@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from .constants import MIGRATION_SEPARATOR, MIGRATION_ZFILL
+from .constants import Constants
 from .exceptions import MigrationError
 
 
@@ -9,11 +9,15 @@ from .exceptions import MigrationError
 class Migration:
     id: int
     name: str
-    path: Path
+    directory_path: Path
 
     @property
-    def _id_str(self) -> str:
-        return str(self.id).zfill(MIGRATION_ZFILL)
+    def _id(self) -> str:
+        return str(self.id).zfill(Constants.MIGRATION_ZFILL)
+
+    @property
+    def file_path(self) -> Path:
+        return self.directory_path.joinpath(f"{self._id}-{self.name}.sql").absolute()
 
     @property
     def up_sql(self) -> str:
@@ -28,12 +32,12 @@ class Migration:
         return sql.strip()
 
     def _migration_content(self) -> tuple[str, str]:
-        file_content = self.path.read_text()
+        file_content = self.file_path.read_text()
 
-        if MIGRATION_SEPARATOR not in file_content:
+        if Constants.MIGRATION_SEPARATOR not in file_content:
             raise MigrationError("Migration file has not required separator")
 
-        up_sql, down_sql = file_content.split(MIGRATION_SEPARATOR, 1)
+        up_sql, down_sql = file_content.split(Constants.MIGRATION_SEPARATOR, 1)
 
         return (up_sql, down_sql)
 

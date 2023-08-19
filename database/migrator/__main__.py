@@ -11,7 +11,7 @@ def show_migration_list(migrator: Migrator) -> None:
 
     for migration in all_migrations:
         is_applied = migration in applied_migrations
-        print(f" - [{'x' if is_applied else ' '}] - {migration._id_str} | {migration.name}")
+        print(f" - [{'x' if is_applied else ' '}] - {migration._id} | {migration.name}")
 
 
 def apply_migrations(
@@ -28,7 +28,7 @@ def apply_migrations(
         to_id = len(applied_migrations) + 1
 
     for migration in not_applied_migrations[: to_id + 1]:
-        print(f"- {migration._id_str} | {migration.name}")
+        print(f"- {migration._id} | {migration.name}")
         migrator.run_migration(migration.id)
 
 
@@ -43,7 +43,7 @@ def revert_migrations(
         to_id = 0
 
     for migration in reversed(applied_migrations[to_id:]):
-        print(f"- {migration._id_str} | {migration.name}")
+        print(f"- {migration._id} | {migration.name}")
         migrator.revert_migration(migration.id)
 
 

@@ -1,8 +1,7 @@
-from os import environ
+import os
 
 from .database import Database
 
-# db = Database(environ["POSTGRES_PASSWORD"])
-db = Database("postgres")
+db = Database(os.environ["POSTGRES_PASSWORD"])
 
 __all__ = ["Database", "db"]

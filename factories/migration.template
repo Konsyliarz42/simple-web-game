@@ -1,0 +1,8 @@
+CREATE TABLE table{id}(
+    column0 SERIAL PRIMARY KEY,
+    column1 TEXT NOT NULL UNIQUE
+);
+
+{separator}
+
+DROP TABLE table{id};
