@@ -6,6 +6,11 @@ import pytest
 from database import Database
 from database.migrator import Migration, Migrator
 from database.migrator.constants import Constants as MigratorConstants
+from database.migrator.utils import (
+    get_migration_by_id,
+    get_migrations_to_apply,
+    get_migrations_to_revert,
+)
 from factories import MigrationFactory
 
 from .. import Constants as PytestConstants
@@ -94,9 +99,9 @@ def test_migrator_run_migration(
     ]
 
     result = db.single_execute(SqlScripts.GET_ALL_MIGRATION_ROWS)
-    assert len(result) == 1
+    assert len(result) == 2
 
-    migration_id, migration_name, applied_at = result[0]
+    migration_id, migration_name, applied_at = result[1]  # 0 is initial migration
     assert migration_id == migration.id
     assert migration_name == migration.name
     assert _round_datetime(applied_at) == _round_datetime(current_utc_time)
@@ -121,7 +126,7 @@ def test_migrator_revert_migration(
     assert result == [(MigratorConstants.MIGRATION_TABLE, PytestConstants.POSTGRES_USER)]
 
     result = db.single_execute(SqlScripts.GET_ALL_MIGRATION_ROWS)
-    assert len(result) == 0
+    assert len(result) == 1
 
 
 def test_migrator_revert_migration_with_wrong_id(migrator: Migrator) -> None:
@@ -152,3 +157,68 @@ def test_migrator_get_all_applied_migrations(
     applied_migrations = migrator.get_applied_migrations()
 
     assert len(list(migration_files)) > len(applied_migrations)
+
+
+def test_migrator_get_migrations_to_apply(
+    migrator: Migrator,
+    migration_factory: MigrationFactory,
+) -> None:
+    migrations: list[Migration] = migration_factory.create_batch(4)
+
+    migrations_to_apply = get_migrations_to_apply(
+        all_migrations=migrator.get_all_migrations(),
+        applied_migrations=migrator.get_applied_migrations(),
+    )
+
+    assert migrations == migrations_to_apply
+
+
+@pytest.mark.parametrize("migration_id", [0, 1, 2, 3, 4])
+def test_migrator_get_migrations_to_apply_to_id(
+    migrator: Migrator,
+    migration_factory: MigrationFactory,
+    migration_id: int,
+) -> None:
+    migrations: list[Migration] = migration_factory.create_batch(4)
+
+    migrations_to_apply = get_migrations_to_apply(
+        all_migrations=migrator.get_all_migrations(), applied_migrations=migrator.get_applied_migrations(), to_id=migration_id
+    )
+
+    assert migrations[: migration_id + 1] == migrations_to_apply
+
+
+def test_migrator_get_migrations_to_revert(
+    migrator: Migrator,
+    migration_factory: MigrationFactory,
+) -> None:
+    migrations: list[Migration] = migration_factory.create_batch(4)
+    [migrator.run_migration(migration.id) for migration in migrations]
+    initial_migration = get_migration_by_id(migrator.get_all_migrations(), 0)
+    migrations.reverse()
+    migrations.append(initial_migration)
+
+    migrations_to_revert = get_migrations_to_revert(applied_migrations=migrator.get_applied_migrations())
+
+    assert migrations == migrations_to_revert
+
+
+@pytest.mark.parametrize("migration_id", [0, 1, 2, 3, 4])
+def test_migrator_get_migrations_to_revert_to_id(
+    migrator: Migrator,
+    migration_factory: MigrationFactory,
+    migration_id: int,
+) -> None:
+    migrations: list[Migration] = migration_factory.create_batch(4)
+    [migrator.run_migration(migration.id) for migration in migrations]
+    initial_migration = get_migration_by_id(migrator.get_all_migrations(), 0)
+    migrations = [initial_migration] + migrations
+
+    migrations_to_revert = get_migrations_to_revert(
+        applied_migrations=migrator.get_applied_migrations(),
+        to_id=migration_id,
+    )
+
+    result = migrations[migration_id:]
+    result.reverse()
+    assert result == migrations_to_revert

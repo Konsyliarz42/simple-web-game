@@ -4,7 +4,7 @@ from pathlib import Path
 from ..database import Database
 from .constants import Constants
 from .migration import Migration
-from .utils import get_initial_migration, get_migration_by_id
+from .utils import get_migration_by_id
 
 
 class Migrator:
@@ -25,12 +25,17 @@ class Migrator:
         if not self.directory.is_dir():
             raise ValueError("Migration directory path is not a directory")
 
-        up_sql, down_sql = get_initial_migration()
-        self.db.single_execute(up_sql)
-
         if not self.get_all_migrations():
-            initial_migration = self.create_migration(Constants.INITIAL_MIGRATION_NAME)
-            initial_migration.file_path.write_text(f"{up_sql}\n\n{Constants.MIGRATION_SEPARATOR}\n\n{down_sql}\n")
+            self._create_initial_migration()
+
+    def _create_initial_migration(self) -> None:
+        migration = self.create_migration(Constants.INITIAL_MIGRATION_NAME)
+        sql = Constants.INITIAL_MIGRATION_TEMPLATE_PATH.read_text("utf-8").format(
+            table_name=Constants.MIGRATION_TABLE,
+            separator=Constants.MIGRATION_SEPARATOR,
+        )
+        migration.file_path.write_text(sql, "utf-8")
+        self.run_migration(migration.id)
 
     def _insert_migration(self, migration: Migration) -> None:
         """

@@ -42,7 +42,7 @@ lint = "task lint_mypy && task lint_flake8 && task lint_ruff"
 lint_mypy = "mypy {root_directory} {additional_directories}"
 lint_flake8 = "flake8 {root_directory} {additional_directories} {tests_directory} && echo flake8: All is ok!"
 lint_ruff = "ruff check {root_directory} {additional_directories} {tests_directory} && echo ruff: All is ok!"
-test = "coverage run -m pytest -v"
+test = "coverage run -m pytest -vv"
 test_report = "coverage report --skip-empty --show-missing --fail-under=80"
 
 [tool.isort]

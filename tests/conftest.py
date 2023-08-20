@@ -31,7 +31,7 @@ def postgres() -> Container:
         detach=True,
     )
 
-    sleep(2)  # For full initialize container
+    sleep(3)  # For full initialize container
 
     yield container
 
@@ -49,7 +49,9 @@ def db(postgres: Container) -> Database:
     }
     db = Database(**db_env)
 
-    return db
+    yield db
+
+    db.close()
 
 
 @pytest.fixture
@@ -57,6 +59,8 @@ def migrator(db: Database) -> Migrator:
     migrator = Migrator(db, Constants.MIGRATIONS_DIRECTORY)
 
     yield migrator
+
+    MigrationFactory.reset_sequence()
 
     for migration in Constants.MIGRATIONS_DIRECTORY.glob("*.sql"):
         migration.unlink()

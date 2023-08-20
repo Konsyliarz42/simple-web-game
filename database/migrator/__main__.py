@@ -3,6 +3,35 @@ from typing import Optional
 
 from .. import db
 from . import Migration, Migrator
+from .utils import get_migrations_to_apply, get_migrations_to_revert
+
+
+def apply_migrations(
+    migrator: Migrator,
+    to_id: Optional[int] = None,
+    all_migrations: Optional[tuple[Migration, ...]] = None,
+    applied_migrations: Optional[tuple[Migration, ...]] = None,
+) -> None:
+    all_migrations = all_migrations or migrator.get_all_migrations()
+    applied_migrations = applied_migrations or migrator.get_applied_migrations()
+    migrations = get_migrations_to_apply(all_migrations, applied_migrations, to_id)
+
+    for migration in migrations:
+        print(f"- {migration._id} | {migration.name}")
+        migrator.run_migration(migration.id)
+
+
+def revert_migrations(
+    migrator: Migrator,
+    to_id: Optional[int] = None,
+    applied_migrations: Optional[tuple[Migration, ...]] = None,
+) -> None:
+    applied_migrations = applied_migrations or migrator.get_applied_migrations()
+    migrations = get_migrations_to_revert(applied_migrations, to_id)
+
+    for migration in migrations:
+        print(f"- {migration._id} | {migration.name}")
+        migrator.revert_migration(migration.id)
 
 
 def show_migration_list(migrator: Migrator) -> None:
@@ -14,55 +43,21 @@ def show_migration_list(migrator: Migrator) -> None:
         print(f" - [{'x' if is_applied else ' '}] - {migration._id} | {migration.name}")
 
 
-def apply_migrations(
-    migrator: Migrator,
-    to_id: Optional[int] = None,
-    all_migrations: Optional[tuple[Migration, ...]] = None,
-    applied_migrations: Optional[tuple[Migration, ...]] = None,
-) -> None:
-    all_migrations = all_migrations or migrator.get_all_migrations()
-    applied_migrations = applied_migrations or migrator.get_applied_migrations()
-    not_applied_migrations = [migration for migration in all_migrations if migration not in applied_migrations]
-
-    if to_id is None:
-        to_id = len(applied_migrations) + 1
-
-    for migration in not_applied_migrations[: to_id + 1]:
-        print(f"- {migration._id} | {migration.name}")
-        migrator.run_migration(migration.id)
-
-
-def revert_migrations(
-    migrator: Migrator,
-    to_id: Optional[int] = None,
-    applied_migrations: Optional[tuple[Migration, ...]] = None,
-) -> None:
-    applied_migrations = applied_migrations or migrator.get_applied_migrations()
-
-    if to_id is None:
-        to_id = 0
-
-    for migration in reversed(applied_migrations[to_id:]):
-        print(f"- {migration._id} | {migration.name}")
-        migrator.revert_migration(migration.id)
-
-
 def set_migration(migrator: Migrator, migration_id: int) -> None:
     applied_migrations = migrator.get_applied_migrations()
 
     if not applied_migrations:
-        apply_migrations(migrator, migration_id, applied_migrations=applied_migrations)
-        return
+        return apply_migrations(migrator, migration_id, applied_migrations=applied_migrations)
 
     all_migrations = migrator.get_all_migrations()
     last_applied_migration_id = applied_migrations[-1].id
 
     if migration_id > last_applied_migration_id:
-        apply_migrations(migrator, migration_id, all_migrations, applied_migrations)
+        return apply_migrations(migrator, migration_id, all_migrations, applied_migrations)
     elif migration_id == last_applied_migration_id:
         return
-    else:
-        revert_migrations(migrator, migration_id + 1, applied_migrations)
+
+    return revert_migrations(migrator, migration_id + 1, applied_migrations)
 
 
 if __name__ == "__main__":

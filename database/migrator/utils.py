@@ -1,18 +1,6 @@
-from pathlib import Path
+from typing import Optional
 
-from .constants import Constants
 from .migration import Migration
-
-
-def get_initial_migration() -> tuple[str, str]:
-    sql = Path(Constants.INITIAL_MIGRATION_TEMPLATE_PATH).read_text("utf-8")
-    sql = sql.format(
-        table_name=Constants.MIGRATION_TABLE,
-        separator=Constants.MIGRATION_SEPARATOR,
-    )
-    up, down = sql.split(Constants.MIGRATION_SEPARATOR, 1)
-
-    return (up.strip(), down.strip())
 
 
 def get_migration_by_id(
@@ -24,3 +12,25 @@ def get_migration_by_id(
             return migration
 
     raise ValueError("Migration not found")
+
+
+def get_migrations_to_apply(
+    all_migrations: tuple[Migration, ...],
+    applied_migrations: tuple[Migration, ...],
+    to_id: Optional[int] = None,
+) -> list[Migration]:
+    not_applied_migrations = [migration for migration in all_migrations if migration not in applied_migrations]
+    _to_id = to_id if to_id is not None else len(not_applied_migrations) + 1
+
+    return not_applied_migrations[: _to_id + 1]
+
+
+def get_migrations_to_revert(
+    applied_migrations: tuple[Migration, ...],
+    to_id: Optional[int] = None,
+) -> list[Migration]:
+    _to_id = to_id or 0
+    migrations = list(applied_migrations[_to_id:])
+    migrations.reverse()
+
+    return migrations
