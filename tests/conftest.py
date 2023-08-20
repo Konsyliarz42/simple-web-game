@@ -14,7 +14,7 @@ from . import Constants
 register(MigrationFactory)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session", autouse=True)
 def postgres() -> Container:
     client = docker.DockerClient()
     container_env = {
@@ -51,7 +51,12 @@ def db(postgres: Container) -> Database:
 
     yield db
 
-    db.close()
+    sql = f"""DROP SCHEMA public CASCADE;
+    CREATE SCHEMA public;
+    GRANT ALL ON SCHEMA public TO {Constants.POSTGRES_USER};
+    GRANT ALL ON SCHEMA public TO public;
+    COMMENT ON SCHEMA public IS 'standard public schema';"""
+    db.single_execute(sql)
 
 
 @pytest.fixture
